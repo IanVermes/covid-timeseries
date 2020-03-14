@@ -7,7 +7,7 @@ URL_SELECTOR = 'span.highwire-cite-title > a::attr("href")'
 
 class MedRXIVSpider(scrapy.Spider):
     name = "medrxiv"
-    start_urls = ["https://www.medrxiv.org/content/early/recent?page=16"]
+    start_urls = ["https://www.medrxiv.org/content/early/recent?page=0"]
 
     def parse(self, response):
         for section in response.css("div.pane-content > div.highwire-list-wrapper"):
@@ -16,8 +16,15 @@ class MedRXIVSpider(scrapy.Spider):
                 yield data
 
     def _list_item_parser(self, item):
-        return {
+        # Extract data
+        data = {
             "title": item.css(TITLE_SELECTOR).get(),
             "doi": item.css(DOI_SELECTOR).get(),
             "url": item.css(URL_SELECTOR).get(),
         }
+        # Clean data
+        for key in data.keys():
+            value = data[key]
+            if value:
+                data[key] = value.strip()
+        return data
