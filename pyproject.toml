@@ -8,6 +8,9 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.8.2"
 jupyter = "^1.0.0"
+scrapy = "^2.0.0"
+beautifulsoup4 = "^4.8.2"
+requests = "^2.23.0"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
