@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "covid-timeseries"
+version = "0.1.0"
+description = "Discover and scrape COVID-2019 academic articles and preprints"
+authors = ["Ian Vermes <ian.vermes@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8.2"
+jupyter = "^1.0.0"
+
+[tool.poetry.dev-dependencies]
+black = "^19.10b0"
+ipython = "^7.13.0"
+pytest = "^5.4.1"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
