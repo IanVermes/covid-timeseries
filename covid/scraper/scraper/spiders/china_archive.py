@@ -9,6 +9,11 @@ BOOKMARK = datetime.datetime(
     year=2020, month=1, day=1
 )  # TODO factor bookmark into its own logic
 
+# "Article page" constants
+REVISION_TABLE_SELECTOR = "#tab_bg tr"
+REVISION_DATE_SELECTOR = "#tab_bg tr:last-child td:nth-child(2)::text"
+REVISION_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 
 class ChinaXIVSpider(scrapy.Spider):
     name = "chinaxiv"
@@ -49,6 +54,23 @@ class ChinaXIVSpider(scrapy.Spider):
                 f"Do not follow to next page, bookmark reached: {BOOKMARK}"
             )
 
+    def parse_article_page(self, response, data):
+        self.logger.debug(f"visited={response.url}")
+        # Process the V1 date from the table
+        date_string = response.css(REVISION_DATE_SELECTOR).get()
+        if not date_string:
+            self.logger.error("No revision date found on page!")
+            raise ValueError(
+                "parse_article_page has stale selectors or is a v1 article"
+            )
+        else:
+            date_string = date_string.strip()
+        date = datetime.datetime.strptime(date_string, REVISION_DATE_FORMAT)
+        data["posted"] = date.strftime(POSTED_DATE_FORMAT)
+        # Process whether there is a row with V2, and thus determine if there are revisions
+        data["is_revision"] = bool(response.css(REVISION_TABLE_SELECTOR).re("V2"))
+        yield data
+
     def _extract_cursor(self, xml_root):
         elements = xml_root.xpath("//ns:resumptionToken/text()", namespaces=self.nsmap)
         try:
@@ -64,11 +86,20 @@ class ChinaXIVSpider(scrapy.Spider):
         data = {
             "title": self._get_article_title(stub_data),
             "url": self._get_article_url(stub_data),
-            "posted": self._get_article_posted_date(stub_data),
-            "is_revision": self._get_revision_status(stub_data),
             "id": self._get_article_id(stub_data),
         }
-        return data
+        request = self._request_posted_date(data)
+        return request
+
+    def _request_posted_date(self, data):
+        # Scrape the article page, because the posted date is not in the XML
+        article_info_url = data["url"]
+        request = scrapy.Request(
+            article_info_url,
+            callback=self.parse_article_page,
+            cb_kwargs=dict(data=data),
+        )
+        return request
 
     def _get_article_title(self, stub_data):
         title = stub_data.xpath(
@@ -83,14 +114,6 @@ class ChinaXIVSpider(scrapy.Spider):
             "ns:metadata//*[local-name()='url']/text()", namespaces=self.nsmap
         ).pop()
         return url
-
-    def _get_article_posted_date(self, stub_data):
-        date_time = self._get_publication_date(stub_data)  # TODO placeholder date
-        date = date_time.strftime(POSTED_DATE_FORMAT)
-        return date
-
-    def _get_revision_status(self, stub_data):
-        return False
 
     def _get_article_id(self, stub_data):
         article_id = stub_data.xpath(
