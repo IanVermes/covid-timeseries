@@ -31,11 +31,7 @@ BOOKMARK = datetime.datetime(
 )  # TODO factor bookmark into its own logic
 
 
-class MedRXIVSpider(scrapy.Spider):
-    name = "medrxiv"
-    start_urls = ["https://www.medrxiv.org/content/early/recent?page=0"]
-    works = Works()
-
+class ArchiveSpiderBase:
     def parse(self, response):
         # Find all listed articles
         for section in response.css(SECTION_SELECTOR):
@@ -57,7 +53,8 @@ class MedRXIVSpider(scrapy.Spider):
             )
 
     def _is_page_new(self, date):
-        return date > BOOKMARK
+        # return date > BOOKMARK
+        return False
 
     def _get_section_date(self, section):
         date_string = section.css(SECTION_DATE_SELECTOR).get()
@@ -89,7 +86,7 @@ class MedRXIVSpider(scrapy.Spider):
         # Concat URL with domain
         url = data.get("url")
         if url:
-            data["url"] = "https://www.medrxiv.org" + url
+            data["url"] = self.domain + url
         # Add `is_revision` key and boolean value
         data["is_revision"] = self._is_article_revision(data.get("url"))
         # Add `posted` key and datetime value by scraping the original page
@@ -167,3 +164,17 @@ class MedRXIVSpider(scrapy.Spider):
         else:
             posted_date = None
         return posted_date
+
+
+class MedRXIVSpider(ArchiveSpiderBase, scrapy.Spider):
+    name = "medrxiv"
+    start_urls = ["https://www.medrxiv.org/content/early/recent?page=0"]
+    domain = "https://www.medrxiv.org"
+    works = Works()
+
+
+class BioRXIVSpider(ArchiveSpiderBase, scrapy.Spider):
+    name = "biorxiv"
+    start_urls = ["https://www.biorxiv.org/content/early/recent?page=0"]
+    domain = "https://www.biorxiv.org"
+    works = Works()
