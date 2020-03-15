@@ -12,6 +12,7 @@ scrapy = "^2.0.0"
 beautifulsoup4 = "^4.8.2"
 requests = "^2.23.0"
 crossrefapi = "^1.4.0"
+lxml = "^4.5.0"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
