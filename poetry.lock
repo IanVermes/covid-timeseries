@@ -162,6 +162,17 @@ version = "15.1.0"
 
 [[package]]
 category = "main"
+description = "Library that implements the endpoints of the Crossref API"
+name = "crossrefapi"
+optional = false
+python-versions = "*"
+version = "1.4.0"
+
+[package.dependencies]
+requests = ">=2.11.1"
+
+[[package]]
+category = "main"
 description = "cryptography is a package which provides cryptographic recipes and primitives to Python developers."
 name = "cryptography"
 optional = false
@@ -1122,7 +1133,7 @@ test = ["zope.event"]
 testing = ["zope.event", "nose", "coverage"]
 
 [metadata]
-content-hash = "f36b4fe5044715444ad3ba0146607c0c22d84787633364289146cdb89cd1a6cf"
+content-hash = "d824376176e5943b618f7b7b2f86c2b42cb49d2f415fa65a0d9f42560a0ffaf6"
 python-versions = "^3.8.2"
 
 [metadata.files]
@@ -1212,6 +1223,9 @@ colorama = [
 constantly = [
     {file = "constantly-15.1.0-py2.py3-none-any.whl", hash = "sha256:dd2fa9d6b1a51a83f0d7dd76293d734046aa176e384bf6e33b7e44880eb37c5d"},
     {file = "constantly-15.1.0.tar.gz", hash = "sha256:586372eb92059873e29eba4f9dec8381541b4d3834660707faf8ba59146dfc35"},
+]
+crossrefapi = [
+    {file = "crossrefapi-1.4.0.tar.gz", hash = "sha256:08c0979d95781855e0f37da567a8178e603125f4064b52cbc17c377f04cf3375"},
 ]
 cryptography = [
     {file = "cryptography-2.8-cp27-cp27m-macosx_10_6_intel.whl", hash = "sha256:fb81c17e0ebe3358486cd8cc3ad78adbae58af12fc2bf2bc0bb84e8090fa5ce8"},
