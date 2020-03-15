@@ -57,8 +57,7 @@ class MedRXIVSpider(scrapy.Spider):
             )
 
     def _is_page_new(self, date):
-        # return date > BOOKMARK
-        return False
+        return date > BOOKMARK
 
     def _get_section_date(self, section):
         date_string = section.css(SECTION_DATE_SELECTOR).get()
@@ -99,20 +98,20 @@ class MedRXIVSpider(scrapy.Spider):
 
     def _do_posted_date(self, data, section_date):
         # Fallback posted dates
-        # 1) Get the date from the DOI
-        # 2) Fallback to the date on the website
-        # 3) If the article is `v1` use the section date
-        # 4) If the article is a revision visit the article info page and scrape the v1
-        #    date
+        # 1) If the article is `v1` use the section date
+        # 2) If the article is a revision visit the article info page and scrape v1 date
+        # 3) Get the date from the DOI
+        # 4) Fallback to the date on the website
+        #
         # Why complexity? Reduce the amount of slow HTTP requests. DOI request
         #    returns JSON and is faster than scraping another HTML page. Why not scrape
         #    the v1 for the date in article info? Its the same as the section date in
         #    the list, so is already available.
-        doi = data.get("doi")
-        posted_date = self._posted_date_from_doi(doi)
+        if data.get("is_revision", False):
+            doi = data.get("doi")
+            posted_date = self._posted_date_from_doi(doi)
 
-        if not posted_date:
-            if data.get("is_revision", False):
+            if not posted_date:
                 article_info_url = self._make_article_info_url(data["url"])
                 request = scrapy.Request(
                     article_info_url,
@@ -123,7 +122,7 @@ class MedRXIVSpider(scrapy.Spider):
             else:
                 date = section_date
         else:
-            date = posted_date
+            date = section_date
 
         data = self._add_posted_date(data, date)
         return data
