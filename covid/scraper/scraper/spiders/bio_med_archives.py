@@ -27,7 +27,7 @@ POSTED_DATE_FORMAT = "%Y-%m-%d"
 
 # BOOKMARK is cursor that tracks just how far back we should scrape each time
 BOOKMARK = datetime.datetime(
-    year=2020, month=3, day=6
+    year=2020, month=1, day=1
 )  # TODO factor bookmark into its own logic
 
 
@@ -53,8 +53,7 @@ class ArchiveSpiderBase:
             )
 
     def _is_page_new(self, date):
-        # return date > BOOKMARK
-        return False
+        return date > BOOKMARK
 
     def _get_section_date(self, section):
         date_string = section.css(SECTION_DATE_SELECTOR).get()
@@ -87,6 +86,8 @@ class ArchiveSpiderBase:
         url = data.get("url")
         if url:
             data["url"] = self.domain + url
+        # Add `id` key and string value
+        data = self._add_id(data)
         # Add `is_revision` key and boolean value
         data["is_revision"] = self._is_article_revision(data.get("url"))
         # Add `posted` key and datetime value by scraping the original page
@@ -96,17 +97,20 @@ class ArchiveSpiderBase:
     def _do_posted_date(self, data, section_date):
         # Fallback posted dates
         # 1) If the article is `v1` use the section date
-        # 2) If the article is a revision visit the article info page and scrape v1 date
-        # 3) Get the date from the DOI
+        # 2) If the article is a revision visit get posted date from DOI
+        # 3) Fallback to the date on the article info page
         # 4) Fallback to the date on the website
         #
         # Why complexity? Reduce the amount of slow HTTP requests. DOI request
         #    returns JSON and is faster than scraping another HTML page. Why not scrape
         #    the v1 for the date in article info? Its the same as the section date in
         #    the list, so is already available.
-        if data.get("is_revision", False):
+        if data.get("is_revision"):
             doi = data.get("doi")
-            posted_date = self._posted_date_from_doi(doi)
+            if doi:
+                posted_date = self._posted_date_from_doi(doi)
+            else:
+                posted_date = None
 
             if not posted_date:
                 article_info_url = self._make_article_info_url(data["url"])
@@ -117,7 +121,7 @@ class ArchiveSpiderBase:
                 )
                 return request
             else:
-                date = section_date
+                date = posted_date
         else:
             date = section_date
 
@@ -145,8 +149,20 @@ class ArchiveSpiderBase:
         data["posted"] = date.strftime(POSTED_DATE_FORMAT)
         return data
 
+    def _add_id(self, data):
+        doi = data["doi"]
+        _ignore, article_id = doi.split("/", maxsplit=1)
+        data["id"] = self.id_prefix + "_" + article_id
+        return data
+
     def _posted_date_from_doi(self, doi):
-        date_dict = self.works.doi(doi).get("posted")
+        # Handle bad DOI or absent DOIs
+        doi_data = self.works.doi(doi)
+        if doi_data:
+            date_dict = doi_data.get("posted", {})
+        else:
+            date_dict = {}
+
         # Returns a dict like, but not all keys may be present
         # {'date-parts': [[2020, 3, 13]],
         # 'date-time': '2020-03-13T17:24:23Z',
@@ -170,6 +186,7 @@ class MedRXIVSpider(ArchiveSpiderBase, scrapy.Spider):
     name = "medrxiv"
     start_urls = ["https://www.medrxiv.org/content/early/recent?page=0"]
     domain = "https://www.medrxiv.org"
+    id_prefix = "medrxiv"
     works = Works()
 
 
@@ -177,4 +194,5 @@ class BioRXIVSpider(ArchiveSpiderBase, scrapy.Spider):
     name = "biorxiv"
     start_urls = ["https://www.biorxiv.org/content/early/recent?page=0"]
     domain = "https://www.biorxiv.org"
+    id_prefix = "biorxiv"
     works = Works()
