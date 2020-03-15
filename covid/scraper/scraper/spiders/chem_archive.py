@@ -59,6 +59,7 @@ class ChemRXIVSpider(scrapy.Spider):
             "title": self._get_article_title(stub_data),
             "url": self._get_article_url(stub_data),
             "posted": self._get_article_posted_date(stub_data),
+            "is_revision": self._get_revision_status(stub_data),
             "id": self._get_article_id(stub_data),
         }
         return data
@@ -75,6 +76,10 @@ class ChemRXIVSpider(scrapy.Spider):
         date_time = datetime.datetime.fromisoformat(date_string)
         date = date_time.strftime(POSTED_DATE_FORMAT)
         return date
+
+    def _get_revision_status(self, stub_data):
+        version = stub_data["data"]["version"]
+        return version > 1
 
     def _get_article_id(self, stub_data):
         return self.id_prefix + "_" + str(stub_data["data"]["id"])
